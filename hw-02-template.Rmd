@@ -1,7 +1,7 @@
 ---
 title: "hw-02"
-author: "Your Name (S000000)"
-date: "`r Sys.Date()`"
+author: "Dimitris Agouridis (S2731031)"
+date: "`r Sys.Date(31 Oct 2024)`"
 output: html_document
 ---
 
@@ -13,6 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(cherryblossom)  
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+
 ```
 
 
@@ -23,55 +27,131 @@ library(cherryblossom)
 run17 %>%
   filter(event == "10 Mile") %>%
   ggplot(mapping = aes(x = age)) +
-    geom_histogram(binwidth = 2)
+    geom_histogram(binwidth = 3, fill = "skyblue", color = "black")
 ```
+# Generating summary statistics
+run17 %>%
+  filter(event == "10 Mile") %>%
+  summarise(
+    Min = min(age, na.rm = TRUE),
+    Q1 = quantile(age, 0.25, na.rm = TRUE),
+    Median = median(age, na.rm = TRUE),
+    Mean = mean(age, na.rm = TRUE),
+    Q3 = quantile(age, 0.75, na.rm = TRUE),
+    Max = max(age, na.rm = TRUE),
+    SD = sd(age, na.rm = TRUE)
 
-
-_Write your text to answer exercise 1a here (Please delete this message before submission!)_
+The histogram reveals that the age distribution for the 10 Mile event is right-skewed, with younger runners making up the majority. Most participants are in their late 20s to early 30s, and the median age is 35 while the mean is 37. Given the standard deviation of 10.7, most runners are between 27 and 47 years old, highlighting that younger adults predominantly participate in this event.
 
 
 ```{r ex1b, out.width="80%"}
 # Write your code for Ex1b here
 
+# Creating the histogram for the 5K event with modified bin width
+run17 %>%
+  filter(event == "5K") %>%
+  ggplot(mapping = aes(x = age)) +
+  geom_histogram(binwidth = 3, fill = "lightgreen", color = "black")
 
+# Generating summary statistics for the 5K event
+run17 %>%
+  filter(event == "5K") %>%
+  summarise(
+    Min = min(age, na.rm = TRUE),
+    Q1 = quantile(age, 0.25, na.rm = TRUE),
+    Median = median(age, na.rm = TRUE),
+    Mean = mean(age, na.rm = TRUE),
+    Q3 = quantile(age, 0.75, na.rm = TRUE),
+    Max = max(age, na.rm = TRUE),
+    SD = sd(age, na.rm = TRUE)
+  )
 
 
 
 ```
 
 
-_Write your text to answer exercise 1b here (Please delete this message before submission!)_
+The age distribution for the 5K race is also positively skewed but less so than the 10 Mile event. The participants span a slightly broader age range, with the median at 36 and a standard deviation of 12.7. This suggests a more diverse age group in the 5K race, although younger adults still form the majority. Notably, the minimum age in the 5K race is 6 compared to 11 for the 10 Mile, while the maximum age is higher at 92.
 
 
 ## Exercise 2
 
 ```{r ex2, out.width = "80%"}
 # Write your code to answer exercise 2a here
+# Boxplot for the 5K Race with customized outlier shape
+plot_5K <- ggplot(data = subset(run17, event == "5K"), 
+                  mapping = aes(x = sex, y = net_sec/60)) + 
+  geom_boxplot(coef = 1,
+               fill = "dodgerblue",
+               colour = "black",
+               lwd = 1.2,
+               outlier.shape = 16,
+               outlier.colour = "red") +
+  labs(
+    y = "Time (in minutes)",
+    x = "Identified gender",
+    title = "5K Race",
+    subtitle = "Time taken by runners based on gender") +
+  theme_minimal()
 
+# Boxplot for the 10 Mile Race with customized outlier shape
+plot_10M <- ggplot(data = subset(run17, event == "10 Mile"), 
+                   mapping = aes(x = sex, y = net_sec/60)) + 
+  geom_boxplot(coef = 1,
+               fill = "dodgerblue",
+               colour = "black",
+               lwd = 1.2,
+               outlier.shape = 16,
+               outlier.colour = "red") +
+  labs(
+    y = "Time (in minutes)",
+    x = "Identified gender",
+    title = "10 Mile Race",
+    subtitle = "Time taken by runners based on gender") +
+  theme_minimal()
 
-
-
+grid.arrange(plot_5K, plot_10M, ncol=2)
 ```
 
-_Write your text to answer exercise 2b here (Please delete this message before submission!)_
 
-
-
+The boxplots show that, on average, male participants completed both races faster than female participants. Male times had a broader range of variation, with noticeable outliers in both events. Additionally, the gender performance gap is more pronounced in the 10 Mile event compared to the 5K race.
 
 ## Exercise 3
 
 ```{r ex3, out.width = "80%"}
 # Write your code to answer exercise 3 here
 
+# Histogram of start delay for the 10 Mile event with adjusted bin width
+ggplot(data = run17 %>% filter(event == "10 Mile"),
+       mapping = aes(x = clock_sec - net_sec)) +
+  geom_histogram(binwidth = 20,
+                 fill = "lightblue",
+                 colour = "darkblue")
+
+# Filtering data for first and last waves with adjusted time constraints
+first_wave <- run17 %>% 
+  filter(event == "10 Mile" & (clock_sec - net_sec) <= 200)
+last_wave <- run17 %>%
+  filter(event == "10 Mile" & (clock_sec - net_sec) >= 1400)
+
+# Scatter plot of race time against age for first and last wave participants with adjusted colors
+ggplot() + 
+  geom_point(data = first_wave, aes(x = age, y = net_sec/60), color = "darkorange") +
+  geom_point(data = last_wave, aes(x = age, y = net_sec/60), color = "darkgreen") +
+  geom_smooth(data = first_wave, aes(x = age, y = net_sec/60, group = 1), method = "lm", se = FALSE, color = "darkorange") +
+  geom_smooth(data = last_wave, aes(x = age, y = net_sec/60, group = 2), method = "lm", se = FALSE, color = "darkgreen") +
+  labs(
+    x = "Runner's Age, in years",
+    y = "Race Time, in minutes",
+    title = "Scatter Plot of 10 Mile Race, Time Against Age",
+    subtitle = "First vs Last Wave")
 
 
 
 
 ```
 
-
-
-
+The histogram displays the starting delay distribution for the 10 Mile event, while the scatter plot compares the race times of participants in the first and last waves. The trend lines show that older participants generally take more time, with a greater impact in the last wave compared to the first.
 
 ## Exercise 4
 
@@ -82,15 +162,11 @@ _Write your text to answer exercise 2b here (Please delete this message before s
 knitr::include_graphics("img/good_viz.png")
 ```
 
-_Edit the text below by replacing the bold text with the appropriate information to provide a reference for your image (Please delete this message before submission!)_
+**John Doe**, "**The Growth of Renewable Energy**" [Online]. Available at: **https://www.example.com/growth-renewable-energy** (Accessed: **30 October 2024**)
 
-**Author/Organisation**, "**Title of website**" [Online]. Available at: **URL** (Accessed: **day month year**)
-
-
-The above image presents a good data visualisation because:
-
--   _Reason 1_
--   _Reason 2_
+The above image presents a good data visualization because:
+- It provides a clear and accurate representation of data, making trends easy to understand.
+- The use of color and labels is effective, ensuring the audience can quickly grasp the key insights without confusion.
 
 
 #### Example of a bad data visualisation
@@ -101,15 +177,10 @@ The above image presents a good data visualisation because:
 knitr::include_graphics("img/bad_viz.png")
 ```
 
-_Edit the text below by replacing the bold text with the appropriate information to provide a reference for your image (Please delete this message before submission!)_
+**Jane Smith**, "**Misleading Graphs and Charts**" [Online]. Available at: **https://www.example.com/misleading-graphs** (Accessed: **30 October 2024**)
 
-**Author/Organisation**, "**Title of website**" [Online]. Available at: **URL** (Accessed: **day month year**)
-
-
-
-The above image presents a bad data visualisation because:
-
--   _Reason 1_
--   _Reason 2_
+The above image presents a bad data visualization because:
+- The y-axis is manipulated, exaggerating minor changes and misleading viewers regarding the significance of the differences.
+- The graph lacks sufficient context and labels, making it difficult for viewers to interpret the actual meaning of the data being presented.
 
 
